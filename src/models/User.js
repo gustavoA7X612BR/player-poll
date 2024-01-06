@@ -3,22 +3,28 @@ const mongoose = require('../db');
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, 'name field is missing'],
   },
   email: {
     type: String,
-    unique: true,
-    required: true,
+    unique: [true, 'email already registred'],
+    required: [true, 'email field is missing'],
     lowercase: true,
+    validate: {
+      validator: function (email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: '{email} is not valid!',
+    },
   },
   birthDate: {
     type: Date,
-    required: true,
+    required: [true, 'birth date field is missing'],
   },
   password: {
     type: String,
     select: false,
-    required: true,
+    required: [true, 'password is missing'],
   },
   passwordResetToken: {
     type: String,
