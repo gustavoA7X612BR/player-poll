@@ -1,4 +1,5 @@
 const mongoose = require('../db');
+const bcrypt = require('bcrypt');
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -10,6 +11,7 @@ const UserSchema = new mongoose.Schema({
     unique: [true, 'email already registred'],
     required: [true, 'email field is missing'],
     lowercase: true,
+    trim: true,
     validate: {
       validator: function (email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -42,6 +44,13 @@ const UserSchema = new mongoose.Schema({
     type: [{ type: mongoose.Schema.Types.ObjectId }],
   },
 });
+
+function encryptUserPassword(next) {
+  this.password = bcrypt.hash(this.password, 10);
+  next();
+}
+
+UserSchema.pre('save', encryptUserPassword);
 
 const User = mongoose.model('Users', UserSchema);
 module.exports = User;
