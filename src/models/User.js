@@ -45,8 +45,8 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
-function encryptUserPassword(next) {
-  this.password = bcrypt.hash(this.password, 10);
+async function encryptUserPassword(next) {
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 }
 
