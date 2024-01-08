@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { createUser, loginUser } = require('../controllers/auth');
+const verifyToken = require('../middlewares/verifyToken');
+const { createUser, loginUser, deleteUser } = require('../controllers/auth');
 
 /* GET users listing. */
 router.post('/', createUser);
 router.post('/auth', loginUser);
+
+router.delete('/', verifyToken, deleteUser);
 
 module.exports = router;

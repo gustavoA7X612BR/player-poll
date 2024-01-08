@@ -17,4 +17,4 @@
 
 ## Controladores
  - Controlador de usuário
- - Controlador de projeto
+ - Controlador de votação
