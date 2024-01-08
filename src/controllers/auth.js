@@ -47,3 +47,23 @@ exports.loginUser = async (req, res) => {
     return res.status(500).send({ message: err });
   }
 };
+
+exports.deleteUser = async (req, res) => {
+  const { userId } = req;
+  const { password } = req.body;
+
+  if (!userId) return res.status(400).send({ message: 'User ID not provided' });
+
+  if (!password)
+    return res.status(400).send({ message: 'password not provided' });
+
+  const user = await User.findById(userId).select('+password');
+  if (!user) return res.status(400).send({ message: 'User not found!' });
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid)
+    return res.status(401).send({ message: 'Invalid password' });
+
+  await user.deleteOne();
+  return res.status(200).send({ message: 'User deleted' });
+};
