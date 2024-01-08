@@ -10,7 +10,16 @@ exports.createUser = async (req, res) => {
     await user.save();
     return res.status(200).send({ message: 'User registred successfully' });
   } catch (err) {
-    return res.status(500).send({ message: err });
+    console.log(err);
+    if (err.code === 11000)
+      return res.status(400).send({ message: 'Email already registred!' });
+
+    if ((err.name = 'ValidationError')) {
+      const firstErrorMessage = Object.values(err.errors)[0].message;
+      return res.status(400).send({ message: firstErrorMessage });
+    }
+
+    return res.status(500).send({ message: 'Internal Server Error' });
   }
 };
 

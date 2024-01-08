@@ -4,7 +4,6 @@ const { createUser, loginUser } = require('../controllers/auth');
 
 /* GET users listing. */
 router.post('/', createUser);
-
 router.post('/auth', loginUser);
 
 module.exports = router;
