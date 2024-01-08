@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema({
     trim: true,
     validate: {
       validator: function (email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       },
       message: '{email} is not valid!',
     },
