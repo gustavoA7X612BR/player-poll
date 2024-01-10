@@ -71,3 +71,14 @@ exports.deleteUser = async (req, res) => {
     return res.status(500).send({ message: 'Internal Server Error' });
   }
 };
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(401).send({ message: 'email not providded' });
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(401).send({ message: 'email not registred' });
+
+  //Create token and set to database
+  //Send token to email
+};
