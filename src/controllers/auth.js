@@ -57,13 +57,17 @@ exports.deleteUser = async (req, res) => {
   if (!password)
     return res.status(400).send({ message: 'password not provided' });
 
-  const user = await User.findById(userId).select('+password');
-  if (!user) return res.status(400).send({ message: 'User not found!' });
+  try {
+    const user = await User.findById(userId).select('+password');
+    if (!user) return res.status(400).send({ message: 'User not found!' });
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid)
-    return res.status(401).send({ message: 'Invalid password' });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid)
+      return res.status(401).send({ message: 'Invalid password' });
 
-  await user.deleteOne();
-  return res.status(200).send({ message: 'User deleted' });
+    await user.deleteOne();
+    return res.status(200).send({ message: 'User deleted' });
+  } catch (err) {
+    return res.status(500).send({ message: 'Internal Server Error' });
+  }
 };
