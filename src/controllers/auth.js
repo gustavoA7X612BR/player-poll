@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const crypto = require('crypto');
 
 exports.createUser = async (req, res) => {
   const { name, email, birthDate, password } = req.body;
@@ -79,6 +80,24 @@ exports.forgotPassword = async (req, res) => {
   const user = await User.findOne({ email });
   if (!user) return res.status(401).send({ message: 'email not registred' });
 
-  //Create token and set to database
+  const passwordResetToken = crypto.randomBytes(32).toString('hex');
+
+  const passwordResetExpires = new Date();
+  passwordResetExpires.setHours(passwordResetExpires.getHours() + 1);
+
+  await User.findOneAndUpdate(
+    { _id: user._id },
+    {
+      $set: {
+        passwordResetToken,
+        passwordResetExpires,
+      },
+    }
+  );
+
+  await user.save();
+
   //Send token to email
+
+  return res.status(200).send({ message: 'ok' });
 };
