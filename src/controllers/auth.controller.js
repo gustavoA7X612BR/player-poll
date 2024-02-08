@@ -1,7 +1,9 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/user.model');
 const crypto = require('crypto');
+const emailTransporter = require('../modules/nodemailer');
+const { token } = require('morgan');
 
 exports.createUser = async (req, res) => {
   const { name, email, birthDate, password } = req.body;
@@ -75,29 +77,41 @@ exports.deleteUser = async (req, res) => {
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
+
   if (!email) return res.status(401).send({ message: 'email not providded' });
 
-  const user = await User.findOne({ email });
-  if (!user) return res.status(401).send({ message: 'email not registred' });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).send({ message: 'email not registred' });
 
-  const passwordResetToken = crypto.randomBytes(32).toString('hex');
+    const passwordResetToken = crypto.randomBytes(32).toString('hex');
 
-  const passwordResetExpires = new Date();
-  passwordResetExpires.setHours(passwordResetExpires.getHours() + 1);
+    const passwordResetExpires = new Date();
+    passwordResetExpires.setHours(passwordResetExpires.getHours() + 1);
 
-  await User.findOneAndUpdate(
-    { _id: user._id },
-    {
-      $set: {
-        passwordResetToken,
-        passwordResetExpires,
-      },
-    }
-  );
+    await User.findOneAndUpdate(
+      { _id: user._id },
+      {
+        $set: {
+          passwordResetToken,
+          passwordResetExpires,
+        },
+      }
+    );
 
-  await user.save();
+    await user.save();
 
-  //Send token to email
+    //Send token to email
+    const message = {
+      to: email,
+      subject: 'Password Reset Request',
+      text: `Click here to reset your password: ${passwordResetToken}`,
+    };
 
-  return res.status(200).send({ message: 'ok' });
+    emailTransporter.sendMail(message);
+
+    return res.status(200).send({ message: 'ok' });
+  } catch (err) {
+    return res.status(500).send({ message: 'Internal Server Error' });
+  }
 };
