@@ -3,7 +3,9 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const crypto = require('crypto');
 const emailTransporter = require('../modules/nodemailer');
-const { token } = require('morgan');
+const fs = require('fs');
+const path = require('path');
+const handlebars = require('handlebars');
 
 exports.createUser = async (req, res) => {
   const { name, email, birthDate, password } = req.body;
@@ -102,10 +104,19 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     //Send token to email
+    const emailTemplateSource = fs.readFileSync(
+      path.join(__dirname, '../templates/emails/resetPassword.hbs'),
+      'utf8'
+    );
+
+
+    const emailTemplate = handlebars.compile(emailTemplateSource);
+    const emailHtml = emailTemplate({ token: passwordResetToken });
+
     const message = {
       to: email,
       subject: 'Password Reset Request',
-      text: `Click here to reset your password: ${passwordResetToken}`,
+      html: emailHtml,
     };
 
     emailTransporter.sendMail(message);
