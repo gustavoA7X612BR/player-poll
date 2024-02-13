@@ -6,7 +6,8 @@ const crypto = require('crypto');
 const emailTransporter = require('../modules/nodemailer');
 
 const getHBSTemplateFromFile = require('../modules/handlebars');
-const bcryptSalt = process.env.BCRYPT_SALT;
+const bcryptSalt = Number(process.env.BCRYPT_SALT);
+const ObjectId = require('mongoose').Types.ObjectId;
 
 exports.createUser = async (req, res) => {
   const { name, email, birthDate, password } = req.body;
@@ -81,17 +82,20 @@ exports.deleteUser = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
 
-  if (!email) return res.status(401).send({ message: 'email not providded' });
+  if (!email) return res.status(400).send({ message: 'email not provided' });
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).send({ message: 'email not registred' });
+    if (!user) return res.status(400).send({ message: 'email not registred' });
 
     const existingToken = await Token.findOne({ userId: user._id });
     if (existingToken) await existingToken.deleteOne();
 
     const resetTokenValue = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = await bcrypt.hash(resetTokenValue, Number(bcryptSalt));
+    const resetTokenHash = await bcrypt.hash(
+      resetTokenValue,
+      bcryptSalt
+    );
 
     const newToken = new Token({
       userId: user._id,
@@ -101,7 +105,10 @@ exports.forgotPassword = async (req, res) => {
     await newToken.save();
 
     const emailTemplate = getHBSTemplateFromFile('resetPassword');
-    const emailHtml = emailTemplate({ token: resetTokenValue });
+    const emailHtml = emailTemplate({
+      token: resetTokenValue,
+      userId: user._id,
+    });
 
     const message = {
       to: email,
@@ -111,6 +118,47 @@ exports.forgotPassword = async (req, res) => {
 
     emailTransporter.sendMail(message);
     return res.status(200).send({ message: 'ok' });
+  } catch (err) {
+    return res.status(500).send({ message: 'Internal Server Error' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { token, password, userId } = req.body;
+
+  if (!token)
+    return res.status(400).send({ message: 'Reset token not provided!' });
+
+  if (!password)
+    return res.status(400).send({ message: 'Password not provided!' });
+
+  if (!userId || !ObjectId.isValid(userId))
+    return res.status(400).send({ message: 'Invalid Id!' });
+
+  try {
+    const resetToken = await Token.findOne({ userId });
+    if (!resetToken)
+      return res.status(401).send({ message: 'Token invalid or expired!' });
+
+    const isValid = await bcrypt.compare(token, resetToken.value);
+    if (!isValid) return res.status(401).send({ message: 'Invalid token' });
+
+
+    const passwordHash = await bcrypt.hash(password, bcryptSalt);
+    await User.updateOne(
+      {
+        _id: userId,
+      },
+      {
+        $set: {
+          password: passwordHash,
+        },
+      }
+    );
+
+    await resetToken.deleteOne();
+
+    return res.status(200).send({ message: 'Password changed!' });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: 'Internal Server Error' });
