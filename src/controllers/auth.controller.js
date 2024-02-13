@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+const Token = require('../models/token.model');
 const crypto = require('crypto');
 const emailTransporter = require('../modules/nodemailer');
-const fs = require('fs');
-const path = require('path');
-const handlebars = require('handlebars');
+
+const getHBSTemplateFromFile = require('../modules/handlebars');
+const bcryptSalt = process.env.BCRYPT_SALT;
 
 exports.createUser = async (req, res) => {
   const { name, email, birthDate, password } = req.body;
@@ -86,32 +87,21 @@ exports.forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).send({ message: 'email not registred' });
 
-    const passwordResetToken = crypto.randomBytes(32).toString('hex');
+    const existingToken = await Token.findOne({ userId: user._id });
+    if (existingToken) await existingToken.deleteOne();
 
-    const passwordResetExpires = new Date();
-    passwordResetExpires.setHours(passwordResetExpires.getHours() + 1);
+    const resetTokenValue = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = await bcrypt.hash(resetTokenValue, Number(bcryptSalt));
 
-    await User.findOneAndUpdate(
-      { _id: user._id },
-      {
-        $set: {
-          passwordResetToken,
-          passwordResetExpires,
-        },
-      }
-    );
+    const newToken = new Token({
+      userId: user._id,
+      value: resetTokenHash,
+    });
 
-    await user.save();
+    await newToken.save();
 
-    //Send token to email
-    const emailTemplateSource = fs.readFileSync(
-      path.join(__dirname, '../templates/emails/resetPassword.hbs'),
-      'utf8'
-    );
-
-
-    const emailTemplate = handlebars.compile(emailTemplateSource);
-    const emailHtml = emailTemplate({ token: passwordResetToken });
+    const emailTemplate = getHBSTemplateFromFile('resetPassword');
+    const emailHtml = emailTemplate({ token: resetTokenValue });
 
     const message = {
       to: email,
@@ -120,9 +110,9 @@ exports.forgotPassword = async (req, res) => {
     };
 
     emailTransporter.sendMail(message);
-
     return res.status(200).send({ message: 'ok' });
   } catch (err) {
+    console.log(err);
     return res.status(500).send({ message: 'Internal Server Error' });
   }
 };
