@@ -13,21 +13,8 @@ exports.createUser = async (req, res) => {
   const { name, email, birthDate, password } = req.body;
   const user = new User({ name, email, birthDate, password });
 
-  try {
-    await user.save();
-    return res.status(200).send({ message: 'User registred successfully' });
-  } catch (err) {
-    console.log(err);
-    if (err.code === 11000)
-      return res.status(400).send({ message: 'Email already registred!' });
-
-    if ((err.name = 'ValidationError')) {
-      const firstErrorMessage = Object.values(err.errors)[0].message;
-      return res.status(400).send({ message: firstErrorMessage });
-    }
-
-    return res.status(500).send({ message: 'Internal Server Error' });
-  }
+  await user.save();
+  return res.status(200).send({ message: 'User registred successfully' });
 };
 
 exports.loginUser = async (req, res) => {
@@ -37,22 +24,18 @@ exports.loginUser = async (req, res) => {
   if (!password)
     return res.status(400).send({ message: 'password not provided' });
 
-  try {
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) return res.status(404).send({ message: 'user not found' });
+  const user = await User.findOne({ email }).select('+password');
+  if (!user) return res.status(404).send({ message: 'user not found' });
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
-      return res.status(401).send({ message: 'Password is not valid!' });
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid)
+    return res.status(401).send({ message: 'Password is not valid!' });
 
-    const token = jwt.sign({ id: user.id }, process.env.API_SECRET, {
-      expiresIn: '1 day',
-    });
-    user.password = undefined;
-    return res.status(200).send({ user, token, message: 'login successful' });
-  } catch (err) {
-    return res.status(500).send({ message: err });
-  }
+  const token = jwt.sign({ id: user.id }, process.env.API_SECRET, {
+    expiresIn: '1 day',
+  });
+  user.password = undefined;
+  return res.status(200).send({ user, token, message: 'login successful' });
 };
 
 exports.deleteUser = async (req, res) => {
@@ -64,19 +47,15 @@ exports.deleteUser = async (req, res) => {
   if (!password)
     return res.status(400).send({ message: 'password not provided' });
 
-  try {
-    const user = await User.findById(userId).select('+password');
-    if (!user) return res.status(400).send({ message: 'User not found!' });
+  const user = await User.findById(userId).select('+password');
+  if (!user) return res.status(400).send({ message: 'User not found!' });
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
-      return res.status(401).send({ message: 'Invalid password' });
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid)
+    return res.status(401).send({ message: 'Invalid password' });
 
-    await user.deleteOne();
-    return res.status(200).send({ message: 'User deleted' });
-  } catch (err) {
-    return res.status(500).send({ message: 'Internal Server Error' });
-  }
+  await user.deleteOne();
+  return res.status(200).send({ message: 'User deleted' });
 };
 
 exports.forgotPassword = async (req, res) => {
@@ -84,43 +63,36 @@ exports.forgotPassword = async (req, res) => {
 
   if (!email) return res.status(400).send({ message: 'email not provided' });
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).send({ message: 'email not registred' });
+  const user = await User.findOne({ email });
+  if (!user) return res.status(400).send({ message: 'email not registred' });
 
-    const existingToken = await Token.findOne({ userId: user._id });
-    if (existingToken) await existingToken.deleteOne();
+  const existingToken = await Token.findOne({ userId: user._id });
+  if (existingToken) await existingToken.deleteOne();
 
-    const resetTokenValue = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = await bcrypt.hash(
-      resetTokenValue,
-      bcryptSalt
-    );
+  const resetTokenValue = crypto.randomBytes(32).toString('hex');
+  const resetTokenHash = await bcrypt.hash(resetTokenValue, bcryptSalt);
 
-    const newToken = new Token({
-      userId: user._id,
-      value: resetTokenHash,
-    });
+  const newToken = new Token({
+    userId: user._id,
+    value: resetTokenHash,
+  });
 
-    await newToken.save();
+  await newToken.save();
 
-    const emailTemplate = getHBSTemplateFromFile('resetPassword');
-    const emailHtml = emailTemplate({
-      token: resetTokenValue,
-      userId: user._id,
-    });
+  const emailTemplate = getHBSTemplateFromFile('resetPassword');
+  const emailHtml = emailTemplate({
+    token: resetTokenValue,
+    userId: user._id,
+  });
 
-    const message = {
-      to: email,
-      subject: 'Password Reset Request',
-      html: emailHtml,
-    };
+  const message = {
+    to: email,
+    subject: 'Password Reset Request',
+    html: emailHtml,
+  };
 
-    emailTransporter.sendMail(message);
-    return res.status(200).send({ message: 'ok' });
-  } catch (err) {
-    return res.status(500).send({ message: 'Internal Server Error' });
-  }
+  emailTransporter.sendMail(message);
+  return res.status(200).send({ message: 'ok' });
 };
 
 exports.resetPassword = async (req, res) => {
@@ -135,32 +107,26 @@ exports.resetPassword = async (req, res) => {
   if (!userId || !ObjectId.isValid(userId))
     return res.status(400).send({ message: 'Invalid Id!' });
 
-  try {
-    const resetToken = await Token.findOne({ userId });
-    if (!resetToken)
-      return res.status(401).send({ message: 'Token invalid or expired!' });
+  const resetToken = await Token.findOne({ userId });
+  if (!resetToken)
+    return res.status(401).send({ message: 'Token invalid or expired!' });
 
-    const isValid = await bcrypt.compare(token, resetToken.value);
-    if (!isValid) return res.status(401).send({ message: 'Invalid token' });
+  const isValid = await bcrypt.compare(token, resetToken.value);
+  if (!isValid) return res.status(401).send({ message: 'Invalid token' });
 
-
-    const passwordHash = await bcrypt.hash(password, bcryptSalt);
-    await User.updateOne(
-      {
-        _id: userId,
+  const passwordHash = await bcrypt.hash(password, bcryptSalt);
+  await User.updateOne(
+    {
+      _id: userId,
+    },
+    {
+      $set: {
+        password: passwordHash,
       },
-      {
-        $set: {
-          password: passwordHash,
-        },
-      }
-    );
+    }
+  );
 
-    await resetToken.deleteOne();
+  await resetToken.deleteOne();
 
-    return res.status(200).send({ message: 'Password changed!' });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).send({ message: 'Internal Server Error' });
-  }
+  return res.status(200).send({ message: 'Password changed!' });
 };

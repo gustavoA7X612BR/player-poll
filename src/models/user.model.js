@@ -6,12 +6,12 @@ const UserSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'name field is missing'],
+      required: [true, 'Field is missing'],
     },
     email: {
       type: String,
-      unique: [true, 'email already registred'],
-      required: [true, 'email field is missing'],
+      unique: [true, 'Email already registred'],
+      required: [true, 'Field is missing'],
       lowercase: true,
       trim: true,
       validate: {
@@ -21,12 +21,12 @@ const UserSchema = new mongoose.Schema(
     },
     birthDate: {
       type: Date,
-      required: [true, 'birth date field is missing'],
+      required: [true, 'Field is missing'],
     },
     password: {
       type: String,
       select: false,
-      required: [true, 'password is missing'],
+      required: [true, 'Field is missing'],
     },
     createdAt: {
       type: Date,
@@ -44,7 +44,10 @@ const UserSchema = new mongoose.Schema(
 async function encryptUserPassword(next) {
   if (!this.isModified('password')) return next();
 
-  this.password = await bcrypt.hash(this.password, Number(process.env.BCRYPT_SALT));
+  this.password = await bcrypt.hash(
+    this.password,
+    Number(process.env.BCRYPT_SALT)
+  );
   next();
 }
 
