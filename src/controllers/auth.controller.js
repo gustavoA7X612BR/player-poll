@@ -11,6 +11,19 @@ const ObjectId = require('mongoose').Types.ObjectId;
 
 exports.createUser = async (req, res) => {
   const { name, email, birthDate, password } = req.body;
+
+  if(!name) return res.status(400).send({message: 'Name not provided!'});
+  
+  if(!email) return res.status(400).send({message: 'Email not provided!'});
+
+  if(!birthDate) return res.status(400).send({message: 'BirthDate not provided!'});
+
+  if(!password) return res.status(400).send({message: 'Password not provided!'});
+
+  const existingUser = await User.findOne({email});
+  if (existingUser) return res.status(400).send({message: "Email already registred!"})
+
+
   const user = new User({ name, email, birthDate, password });
 
   await user.save();
@@ -48,7 +61,7 @@ exports.deleteUser = async (req, res) => {
     return res.status(400).send({ message: 'password not provided' });
 
   const user = await User.findById(userId).select('+password');
-  if (!user) return res.status(400).send({ message: 'User not found!' });
+  if (!user) return res.status(404).send({ message: 'User not found!' });
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid)
@@ -64,7 +77,7 @@ exports.forgotPassword = async (req, res) => {
   if (!email) return res.status(400).send({ message: 'email not provided' });
 
   const user = await User.findOne({ email });
-  if (!user) return res.status(400).send({ message: 'email not registred' });
+  if (!user) return res.status(404).send({ message: 'email not registred' });
 
   const existingToken = await Token.findOne({ userId: user._id });
   if (existingToken) await existingToken.deleteOne();

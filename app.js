@@ -1,4 +1,4 @@
-require("express-async-errors");
+require('express-async-errors');
 const createError = require('http-errors');
 const express = require('express');
 // const path = require('path');
@@ -42,7 +42,7 @@ app.use(function (err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.send({ message: err.message });
+  res.send({ message: err });
 });
 
 module.exports = app;
