@@ -5,8 +5,8 @@ dotenv.config();
 
 mongoose.connect(process.env.MONGODB_URI);
 mongoose.connection.on('connected', () =>
-  console.log('conectado com sucesso!')
+  console.log('DATABASE: succesfully connected')
 );
-mongoose.connection.on('error', () => console.log('conexão falhou!'));
+mongoose.connection.on('error', () => console.log('DATABASE: connection error'));
 
 module.exports = mongoose;
