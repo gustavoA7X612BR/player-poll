@@ -9,25 +9,26 @@ const getHBSTemplateFromFile = require('../modules/handlebars');
 const bcryptSalt = Number(process.env.BCRYPT_SALT);
 const ObjectId = require('mongoose').Types.ObjectId;
 
-exports.createUser = async (req, res) => {
+const { createUser, findUser } = require('../services/auth.service');
+
+exports.signup = async (req, res) => {
   const { name, email, birthDate, password } = req.body;
 
-  if(!name) return res.status(400).send({message: 'Name not provided!'});
-  
-  if(!email) return res.status(400).send({message: 'Email not provided!'});
+  if (!name) return res.status(400).send({ message: 'Name not provided!' });
 
-  if(!birthDate) return res.status(400).send({message: 'BirthDate not provided!'});
+  if (!email) return res.status(400).send({ message: 'Email not provided!' });
 
-  if(!password) return res.status(400).send({message: 'Password not provided!'});
+  if (!birthDate)
+    return res.status(400).send({ message: 'BirthDate not provided!' });
 
-  const existingUser = await User.findOne({email});
-  if (existingUser) return res.status(400).send({message: "Email already registred!"})
+  if (!password)
+    return res.status(400).send({ message: 'Password not provided!' });
 
+  const data = await createUser({ name, email, birthDate, password });
 
-  const user = new User({ name, email, birthDate, password });
-
-  await user.save();
-  return res.status(200).send({ message: 'User registred successfully' });
+  return res
+    .status(200)
+    .send({ message: 'User registred successfully', ...data });
 };
 
 exports.loginUser = async (req, res) => {
