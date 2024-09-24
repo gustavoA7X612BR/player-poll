@@ -19,10 +19,10 @@ const verifyToken = (req, res, next) => {
   jwt.verify(token, process.env.API_SECRET, (err, decoded) => {
     if (err) return res.status(401).send({ message: 'Invalid token' });
 
-    req.userId = decoded.id
+    req.userId = decoded.id;
 
     return next();
   });
 };
 
-module.exports = verifyToken
+module.exports = verifyToken;

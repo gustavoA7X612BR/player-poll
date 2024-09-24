@@ -1,13 +1,3 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
-const Token = require('../models/token.model');
-const crypto = require('crypto');
-const emailTransporter = require('../modules/nodemailer');
-
-const getHBSTemplateFromFile = require('../modules/handlebars');
-const bcryptSalt = Number(process.env.BCRYPT_SALT);
-
 const {
   createUser,
   loginUser,

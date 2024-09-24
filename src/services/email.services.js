@@ -1,5 +1,5 @@
-const emailTransporter = require('../module/nodemailer');
-const getHBSTemplateFromFile = require('../module/handlebars');
+const emailTransporter = require('../modules/nodemailer');
+const getHBSTemplateFromFile = require('../modules/handlebars');
 
 exports.sendPassowordResetEmail = async (userId, token, email) => {
   const emailTemplate = getHBSTemplateFromFile('resetPassword');

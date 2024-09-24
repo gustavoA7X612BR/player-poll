@@ -24,7 +24,7 @@ app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, 'public')));
 
 // const indexRouter = require('./src/routes/index');
-const usersRouter = require('./src/routes/users');
+const usersRouter = require('./src/routes/users.route');
 
 // app.use('/', indexRouter);
 app.use('/users', usersRouter);
